@@ -86,7 +86,10 @@ bool hasMandatoryProperties( const KPluginMetaData& info )
     if (mode.isEmpty()) {
         return false;
     }
-
+    static const QString plugin_prefix = qgetenv("KDEV_PLUGIN_PREFIX");
+    if (!plugin_prefix.isEmpty() && info.fileName().contains(plugin_prefix)) {
+        return true;
+    }
     // when the plugin is installed into the versioned plugin path, it's good to go
     if (info.fileName().contains(QLatin1String("/kdevplatform/" QT_STRINGIFY(KDEVELOP_PLUGIN_VERSION) "/"))) {
         return true;
