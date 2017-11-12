@@ -103,8 +103,8 @@ public:
      */
     virtual KTextEditor::View* activeTextDocumentView() const = 0;
 
-    virtual QString currentDirectory() const = 0;
     virtual QUrl nextEmptyDocumentUrl() const = 0;
+    virtual void updateDirectoryHint(const QString&) = 0;
 
 public Q_SLOTS:
     /**
