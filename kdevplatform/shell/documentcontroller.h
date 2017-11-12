@@ -137,6 +137,7 @@ public Q_SLOTS:
     virtual bool closeDocument( const QUrl &url );
     void fileClose();
     void slotSaveAllDocuments();
+    void slotSaveAs();
     bool closeAllDocuments() override;
     void closeAllOtherDocuments();
     void reloadAllDocuments();

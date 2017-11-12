@@ -654,6 +654,8 @@ void DocumentController::setupActions()
     action->setText( i18n( "Show Annotate on current document") );
     action->setIconText( i18n( "Annotate" ) );
     action->setIcon( QIcon::fromTheme(QStringLiteral("user-properties")) );
+
+    action = ac->addAction(KStandardAction::SaveAs, this, SLOT(slotSaveAs()));
 }
 
 void DocumentController::slotOpenDocument(const QUrl &url)
@@ -791,6 +793,10 @@ void DocumentController::slotSaveAllDocuments()
 bool DocumentController::saveAllDocuments(IDocument::DocumentSaveMode mode)
 {
     return saveSomeDocuments(openDocuments(), mode);
+}
+
+void DocumentController::slotSaveAs()
+{
 }
 
 bool KDevelop::DocumentController::saveSomeDocuments(const QList< IDocument * > & list, IDocument::DocumentSaveMode mode)
