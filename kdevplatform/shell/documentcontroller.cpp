@@ -119,17 +119,12 @@ public:
 
     OpenFileResult showOpenFile() const
     {
-        QUrl dir;
-        if ( controller->activeDocument() ) {
-            dir = controller->activeDocument()->url().adjusted(QUrl::RemoveFilename);
-        } else  {
-            const auto cfg = KSharedConfig::openConfig()->group("Open File");
-            dir = cfg.readEntry( "Last Open File Directory", Core::self()->projectController()->projectsBaseDirectory() );
-        }
+        auto ui = Core::self()->uiControllerInternal();
+        QUrl dir(controller->currentDirectory());
 
         const auto caption = i18n("Open File");
         const auto filter = i18n("*|Text File\n");
-        auto parent = Core::self()->uiControllerInternal()->defaultMainWindow();
+        auto parent = ui->defaultMainWindow();
 
         // use special dialogs in a KDE session, native dialogs elsewhere
         if (qEnvironmentVariableIsSet("KDE_FULL_SESSION")) {
@@ -1008,7 +1003,7 @@ QStringList DocumentController::documentTypes() const
 
 static const QRegularExpression& emptyDocumentPattern()
 {
-    static const QRegularExpression pattern(QStringLiteral("^/%1(?:\\s\\((\\d+)\\))?$").arg(EMPTY_DOCUMENT_URL));
+    static const QRegularExpression pattern(QStringLiteral("^/(.+/)?%1(?:\\s\\((\\d+)\\))?$").arg(EMPTY_DOCUMENT_URL));
     return pattern;
 }
 
@@ -1017,7 +1012,22 @@ bool DocumentController::isEmptyDocumentUrl(const QUrl &url)
     return emptyDocumentPattern().match(url.toDisplayString(QUrl::PreferLocalFile)).hasMatch();
 }
 
-QUrl DocumentController::nextEmptyDocumentUrl()
+QString DocumentController::currentDirectory() const
+{
+    if ( activeDocument() ) {
+        return activeDocument()->url().adjusted(QUrl::RemoveScheme | QUrl::RemoveFilename).toString();
+    }
+    auto ui = Core::self()->uiControllerInternal();
+    auto toolView = ui->findToolView(i18n("Projects"), nullptr, IUiController::FindFlags::None);
+    if (toolView) {
+    } else {
+        const auto cfg = KSharedConfig::openConfig()->group("Open File");
+        return cfg.readEntry( "Last Open File Directory", Core::self()->projectController()->projectsBaseDirectory() ).toString();
+    }
+    return "/";
+}
+
+QUrl DocumentController::nextEmptyDocumentUrl() const
 {
     int nextEmptyDocNumber = 0;
     const auto& pattern = emptyDocumentPattern();
@@ -1035,9 +1045,9 @@ QUrl DocumentController::nextEmptyDocumentUrl()
 
     QUrl url;
     if (nextEmptyDocNumber > 0)
-        url = QUrl::fromLocalFile(QStringLiteral("/%1 (%2)").arg(EMPTY_DOCUMENT_URL).arg(nextEmptyDocNumber));
+        url = QUrl::fromLocalFile(currentDirectory() + QStringLiteral("%1 (%2)").arg(EMPTY_DOCUMENT_URL).arg(nextEmptyDocNumber));
     else
-        url = QUrl::fromLocalFile('/' + EMPTY_DOCUMENT_URL);
+        url = QUrl::fromLocalFile(currentDirectory() + EMPTY_DOCUMENT_URL);
     return url;
 }
 

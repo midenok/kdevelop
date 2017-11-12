@@ -176,14 +176,14 @@ QUrl TestDocumentController::createFile(const QTemporaryDir& dir, const QString&
 
 void TestDocumentController::testEmptyUrl()
 {
-    const auto first = DocumentController::nextEmptyDocumentUrl();
+    const auto first = m_subject->nextEmptyDocumentUrl();
     QVERIFY(DocumentController::isEmptyDocumentUrl(first));
-    QCOMPARE(DocumentController::nextEmptyDocumentUrl(), first);
+    QCOMPARE(m_subject->nextEmptyDocumentUrl(), first);
 
     auto doc = m_subject->openDocumentFromText(QString());
     QCOMPARE(doc->url(), first);
 
-    const auto second = DocumentController::nextEmptyDocumentUrl();
+    const auto second = m_subject->nextEmptyDocumentUrl();
     QVERIFY(first != second);
     QVERIFY(DocumentController::isEmptyDocumentUrl(second));
 
