@@ -102,8 +102,9 @@ public:
 
     /**checks that url is an url of empty document*/
     static bool isEmptyDocumentUrl(const QUrl &url);
+    QUrl nextEmptyDocumentUrl() const override;
+    void updateDirectoryHint(const QString& path) override;
     QString currentDirectory() const;
-    QUrl nextEmptyDocumentUrl() const;
     
     IDocumentFactory* factory(const QString& mime) const override;
 

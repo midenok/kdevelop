@@ -216,6 +216,8 @@ class KDEVPLATFORMPROJECT_EXPORT ProjectBaseItem
          */
         QString baseName() const;
 
+        QString directory() const;
+
         /**
          * Renames the item to the new name.
          * @returns status information whether the renaming succeeded.

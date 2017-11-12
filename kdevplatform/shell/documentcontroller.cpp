@@ -120,7 +120,7 @@ public:
     OpenFileResult showOpenFile() const
     {
         auto ui = Core::self()->uiControllerInternal();
-        QUrl dir(controller->currentDirectory());
+        QUrl dir = QUrl::fromLocalFile(controller->currentDirectory());
 
         const auto caption = i18n("Open File");
         const auto filter = i18n("*|Text File\n");
@@ -554,6 +554,7 @@ public:
     QPointer<QAction> closeAllOthers;
     KRecentFilesAction* fileOpenRecent;
     KTextEditor::Document* globalTextEditorInstance;
+    QString directoryHint;
 };
 
 DocumentController::DocumentController( QObject *parent )
@@ -1012,19 +1013,27 @@ bool DocumentController::isEmptyDocumentUrl(const QUrl &url)
     return emptyDocumentPattern().match(url.toDisplayString(QUrl::PreferLocalFile)).hasMatch();
 }
 
+void DocumentController::updateDirectoryHint(const QString& path)
+{
+    d->directoryHint = path;
+}
+
 QString DocumentController::currentDirectory() const
 {
     if ( activeDocument() ) {
-        return activeDocument()->url().adjusted(QUrl::RemoveScheme | QUrl::RemoveFilename).toString();
+        QUrl url = activeDocument()->url().adjusted(
+            QUrl::RemoveScheme |
+            QUrl::RemoveFilename |
+            QUrl::StripTrailingSlash);
+        return url.toString();
     }
-    auto ui = Core::self()->uiControllerInternal();
-    auto toolView = ui->findToolView(i18n("Projects"), nullptr, IUiController::FindFlags::None);
-    if (toolView) {
+    if (!d->directoryHint.isEmpty()) {
+        return d->directoryHint;
     } else {
         const auto cfg = KSharedConfig::openConfig()->group("Open File");
         return cfg.readEntry( "Last Open File Directory", Core::self()->projectController()->projectsBaseDirectory() ).toString();
     }
-    return "/";
+    return QString();
 }
 
 QUrl DocumentController::nextEmptyDocumentUrl() const
@@ -1045,9 +1054,9 @@ QUrl DocumentController::nextEmptyDocumentUrl() const
 
     QUrl url;
     if (nextEmptyDocNumber > 0)
-        url = QUrl::fromLocalFile(currentDirectory() + QStringLiteral("%1 (%2)").arg(EMPTY_DOCUMENT_URL).arg(nextEmptyDocNumber));
+        url = QUrl::fromLocalFile(currentDirectory() + '/' + QStringLiteral("%1 (%2)").arg(EMPTY_DOCUMENT_URL).arg(nextEmptyDocNumber));
     else
-        url = QUrl::fromLocalFile(currentDirectory() + EMPTY_DOCUMENT_URL);
+        url = QUrl::fromLocalFile(currentDirectory() + '/' + EMPTY_DOCUMENT_URL);
     return url;
 }
 

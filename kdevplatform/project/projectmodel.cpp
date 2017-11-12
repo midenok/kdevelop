@@ -455,6 +455,19 @@ QString ProjectBaseItem::baseName() const
     return text();
 }
 
+QString ProjectBaseItem::directory() const
+{
+    ProjectBaseItem *item;
+    if ((item = folder()))
+        return item->path().path();
+    if ((item = file()))
+        return item->path().toUrl().adjusted(
+            QUrl::RemoveScheme |
+            QUrl::RemoveFilename |
+            QUrl::StripTrailingSlash).toString();
+    return project()->projectItem()->path().path();
+}
+
 void ProjectBaseItem::setPath( const Path& path)
 {
     Q_D(ProjectBaseItem);
