@@ -119,12 +119,11 @@ public:
 
     OpenFileResult showOpenFile() const
     {
-        auto ui = Core::self()->uiControllerInternal();
         QUrl dir = QUrl::fromLocalFile(controller->currentDirectory());
 
         const auto caption = i18n("Open File");
         const auto filter = i18n("*|Text File\n");
-        auto parent = ui->defaultMainWindow();
+        auto parent = Core::self()->uiControllerInternal()->defaultMainWindow();
 
         // use special dialogs in a KDE session, native dialogs elsewhere
         if (qEnvironmentVariableIsSet("KDE_FULL_SESSION")) {
@@ -1004,7 +1003,10 @@ QStringList DocumentController::documentTypes() const
 
 static const QRegularExpression& emptyDocumentPattern()
 {
-    static const QRegularExpression pattern(QStringLiteral("^/(.+/)?%1(?:\\s\\((\\d+)\\))?$").arg(EMPTY_DOCUMENT_URL));
+    /* A hack that binds empty document to directory tree.
+     * It must be always bound to root dir, otherwise it may clash with existing
+     * files. */
+    static const QRegularExpression pattern(QStringLiteral("^/%1(?:\\s\\((\\d+)\\))?$").arg(EMPTY_DOCUMENT_URL));
     return pattern;
 }
 
@@ -1021,11 +1023,13 @@ void DocumentController::updateDirectoryHint(const QString& path)
 QString DocumentController::currentDirectory() const
 {
     if ( activeDocument() ) {
-        QUrl url = activeDocument()->url().adjusted(
-            QUrl::RemoveScheme |
-            QUrl::RemoveFilename |
-            QUrl::StripTrailingSlash);
-        return url.toString();
+        QUrl url = activeDocument()->url();
+        if (!isEmptyDocumentUrl(url)) {
+            return url.adjusted(
+                QUrl::RemoveScheme |
+                QUrl::RemoveFilename |
+                QUrl::StripTrailingSlash).toString();
+        }
     }
     if (!d->directoryHint.isEmpty()) {
         return d->directoryHint;
@@ -1036,7 +1040,7 @@ QString DocumentController::currentDirectory() const
     return QString();
 }
 
-QUrl DocumentController::nextEmptyDocumentUrl() const
+QUrl DocumentController::nextEmptyDocumentUrl()
 {
     int nextEmptyDocNumber = 0;
     const auto& pattern = emptyDocumentPattern();
@@ -1054,9 +1058,9 @@ QUrl DocumentController::nextEmptyDocumentUrl() const
 
     QUrl url;
     if (nextEmptyDocNumber > 0)
-        url = QUrl::fromLocalFile(currentDirectory() + '/' + QStringLiteral("%1 (%2)").arg(EMPTY_DOCUMENT_URL).arg(nextEmptyDocNumber));
+        url = QUrl::fromLocalFile(QStringLiteral("/%1 (%2)").arg(EMPTY_DOCUMENT_URL).arg(nextEmptyDocNumber));
     else
-        url = QUrl::fromLocalFile(currentDirectory() + '/' + EMPTY_DOCUMENT_URL);
+        url = QUrl::fromLocalFile('/' + EMPTY_DOCUMENT_URL);
     return url;
 }
 

@@ -187,8 +187,7 @@ void MainWindowPrivate::toggleFullScreen(bool fullScreen)
 
 void MainWindowPrivate::fileNew()
 {
-    auto doc = Core::self()->documentControllerInternal();
-    doc->openDocument(doc->nextEmptyDocumentUrl());
+    Core::self()->documentControllerInternal()->openDocument(DocumentController::nextEmptyDocumentUrl());
 }
 
 void MainWindowPrivate::viewAddNewToolView()
