@@ -1004,7 +1004,10 @@ QStringList DocumentController::documentTypes() const
 
 static const QRegularExpression& emptyDocumentPattern()
 {
-    static const QRegularExpression pattern(QStringLiteral("^/(.+/)?%1(?:\\s\\((\\d+)\\))?$").arg(EMPTY_DOCUMENT_URL));
+    /* A hack that binds empty document to directory tree.
+     * It must be always bound to root dir, otherwise it may clash with existing
+     * files. */
+    static const QRegularExpression pattern(QStringLiteral("^/%1(?:\\s\\((\\d+)\\))?$").arg(EMPTY_DOCUMENT_URL));
     return pattern;
 }
 
@@ -1021,11 +1024,13 @@ void DocumentController::updateDirectoryHint(const QString& path)
 QString DocumentController::currentDirectory() const
 {
     if ( activeDocument() ) {
-        QUrl url = activeDocument()->url().adjusted(
-            QUrl::RemoveScheme |
-            QUrl::RemoveFilename |
-            QUrl::StripTrailingSlash);
-        return url.toString();
+        QUrl url = activeDocument()->url();
+        if (!isEmptyDocumentUrl(url)) {
+            return url.adjusted(
+                QUrl::RemoveScheme |
+                QUrl::RemoveFilename |
+                QUrl::StripTrailingSlash).toString();
+        }
     }
     if (!d->directoryHint.isEmpty()) {
         return d->directoryHint;
@@ -1054,9 +1059,9 @@ QUrl DocumentController::nextEmptyDocumentUrl() const
 
     QUrl url;
     if (nextEmptyDocNumber > 0)
-        url = QUrl::fromLocalFile(currentDirectory() + '/' + QStringLiteral("%1 (%2)").arg(EMPTY_DOCUMENT_URL).arg(nextEmptyDocNumber));
+        url = QUrl::fromLocalFile('/' + QStringLiteral("%1 (%2)").arg(EMPTY_DOCUMENT_URL).arg(nextEmptyDocNumber));
     else
-        url = QUrl::fromLocalFile(currentDirectory() + '/' + EMPTY_DOCUMENT_URL);
+        url = QUrl::fromLocalFile('/' + EMPTY_DOCUMENT_URL);
     return url;
 }
 
