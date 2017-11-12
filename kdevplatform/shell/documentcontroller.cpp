@@ -233,15 +233,19 @@ public:
                 return nullptr;
         }
 
-        KSharedConfig::openConfig()->group("Open File").writeEntry( "Last Open File Directory", url.adjusted(QUrl::RemoveFilename) );
+        bool emptyDocument = DocumentController::isEmptyDocumentUrl(url);
+        if (!emptyDocument) {
+            KSharedConfig::openConfig()->group("Open File").
+                writeEntry( "Last Open File Directory", url.adjusted(QUrl::RemoveFilename) );
 
-        // clean it and resolve possible symlink
-        url = url.adjusted( QUrl::NormalizePathSegments );
-        if ( url.isLocalFile() )
-        {
-            QString path = QFileInfo( url.toLocalFile() ).canonicalFilePath();
-            if ( !path.isEmpty() )
-                url = QUrl::fromLocalFile( path );
+            // clean it and resolve possible symlink
+            url = url.adjusted( QUrl::NormalizePathSegments );
+            if ( url.isLocalFile() )
+            {
+                QString path = QFileInfo( url.toLocalFile() ).canonicalFilePath();
+                if ( !path.isEmpty() )
+                    url = QUrl::fromLocalFile( path );
+            }
         }
 
         //get a part document
@@ -250,7 +254,7 @@ public:
         {
             QMimeType mimeType;
 
-            if (DocumentController::isEmptyDocumentUrl(url))
+            if (emptyDocument)
             {
                 mimeType = QMimeDatabase().mimeTypeForName(QStringLiteral("text/plain"));
             }

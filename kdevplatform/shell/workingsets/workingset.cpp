@@ -138,6 +138,10 @@ void WorkingSet::saveFromArea( Sublime::Area* a, Sublime::AreaIndex * area, KCon
             //The working set config gets an updated list of files
             QString docSpec = view->document()->documentSpecifier();
 
+            if (DocumentController::isEmptyDocumentUrl(QUrl(docSpec))) {
+                continue;
+            }
+
             //only save the documents from protocols KIO understands
             //otherwise we try to load kdev:// too early
             if (!KProtocolInfo::isKnownProtocol(QUrl(docSpec))) {
