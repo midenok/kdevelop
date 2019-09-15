@@ -91,6 +91,9 @@ ProjectManagerView::ProjectManagerView( ProjectManagerViewPlugin* plugin, QWidge
         m_ui->splitter->setStretchFactor(1, projectBuildSetStrechFactor);
     }
 
+    // keep the project tree view from collapsing (would confuse users)
+    m_ui->splitter->setCollapsible(0, false);
+
     m_syncAction = plugin->actionCollection()->action(QStringLiteral("locate_document"));
     Q_ASSERT(m_syncAction);
     m_syncAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -170,11 +173,18 @@ void ProjectManagerView::selectionChanged()
 {
     m_ui->buildSetView->selectionChanged();
     QList<ProjectBaseItem*> selected;
+    bool updated = false;
     foreach( const QModelIndex& idx, m_ui->projectTreeView->selectionModel()->selectedRows() )
     {
-        selected << ICore::self()->projectController()->projectModel()->itemFromIndex(indexFromView( idx ));
+        auto item = ICore::self()->projectController()->projectModel()->itemFromIndex(indexFromView( idx ));
+        if (item) {
+            selected << item;
+            if (!updated) {
+                ICore::self()->documentController()->updateDirectoryHint(item->directory());
+                updated = true;
+            }
+        }
     }
-    selected.removeAll(nullptr);
     KDevelop::ICore::self()->selectionController()->updateSelection( new ProjectManagerViewItemContext( selected, this ) );
 }
 

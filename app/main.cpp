@@ -49,6 +49,8 @@
 #include <QDBusInterface>
 #include <QDBusReply>
 
+#include <QQuickWindow>
+
 #include <shell/core.h>
 #include <shell/mainwindow.h>
 #include <shell/projectcontroller.h>
@@ -94,7 +96,7 @@ void openFiles(const QVector<UrlInfo>& infos)
 {
     foreach (const UrlInfo& info, infos) {
         if (!ICore::self()->documentController()->openDocument(info.url, info.cursor)) {
-            qWarning() << i18n("Could not open %1", info.url.toDisplayString(QUrl::PreferLocalFile));
+            qWarning(APP) << i18n("Could not open %1", info.url.toDisplayString(QUrl::PreferLocalFile));
         }
     }
 }
@@ -164,7 +166,7 @@ private Q_SLOTS:
             QString x11SessionId = QStringLiteral("%1_%2").arg(sm.sessionId()).arg(sm.sessionKey());
             const auto activeSession = KDevelop::Core::self()->sessionController()->activeSession();
             if (!activeSession) {
-                qWarning() << "No active session, can't save state";
+                qWarning(APP) << "No active session, can't save state";
                 return;
             }
 
@@ -303,6 +305,13 @@ int main( int argc, char *argv[] )
 {
     QElapsedTimer timer;
     timer.start();
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 8, 0)
+    // If possible, use the Software backend for QQuickWidget (currently used in the
+    // welcome page plugin). This means we don't need OpenGL at all, avoiding issues
+    // like https://bugs.kde.org/show_bug.cgi?id=386527.
+    QQuickWindow::setSceneGraphBackend(QSGRendererInterface::Software);
+#endif
 
     // TODO: Maybe generalize, add KDEVELOP_STANDALONE build option
 #if defined(Q_OS_WIN) || defined(Q_OS_MAC)
@@ -658,7 +667,7 @@ int main( int argc, char *argv[] )
         const KDevelop::SessionInfo* sessionData = findSessionInList(availableSessionInfos, session);
 
         if( !sessionData ) {
-            qCritical() << "session not given or does not exist";
+            qCritical(APP) << "session not given or does not exist";
             return 5;
         }
 
@@ -668,7 +677,7 @@ int main( int argc, char *argv[] )
             std::cout << pid << std::endl;
             return 0;
         } else {
-            qCritical() << sessionData->uuid.toString() << sessionData->name << "is not running";
+            qCritical(APP) << sessionData->uuid.toString() << sessionData->name << "is not running";
             return 5;
         }
     }

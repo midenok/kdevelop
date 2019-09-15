@@ -119,13 +119,7 @@ public:
 
     OpenFileResult showOpenFile() const
     {
-        QUrl dir;
-        if ( controller->activeDocument() ) {
-            dir = controller->activeDocument()->url().adjusted(QUrl::RemoveFilename);
-        } else  {
-            const auto cfg = KSharedConfig::openConfig()->group("Open File");
-            dir = cfg.readEntry( "Last Open File Directory", Core::self()->projectController()->projectsBaseDirectory() );
-        }
+        QUrl dir = QUrl::fromLocalFile(controller->currentDirectory());
 
         const auto caption = i18n("Open File");
         const auto filter = i18n("*|Text File\n");
@@ -559,6 +553,7 @@ public:
     QPointer<QAction> closeAllOthers;
     KRecentFilesAction* fileOpenRecent;
     KTextEditor::Document* globalTextEditorInstance;
+    QString directoryHint;
 };
 
 DocumentController::DocumentController( QObject *parent )
@@ -1008,6 +1003,9 @@ QStringList DocumentController::documentTypes() const
 
 static const QRegularExpression& emptyDocumentPattern()
 {
+    /* A hack that binds empty document to directory tree.
+     * It must be always bound to root dir, otherwise it may clash with existing
+     * files. */
     static const QRegularExpression pattern(QStringLiteral("^/%1(?:\\s\\((\\d+)\\))?$").arg(EMPTY_DOCUMENT_URL));
     return pattern;
 }
@@ -1015,6 +1013,31 @@ static const QRegularExpression& emptyDocumentPattern()
 bool DocumentController::isEmptyDocumentUrl(const QUrl &url)
 {
     return emptyDocumentPattern().match(url.toDisplayString(QUrl::PreferLocalFile)).hasMatch();
+}
+
+void DocumentController::updateDirectoryHint(const QString& path)
+{
+    d->directoryHint = path;
+}
+
+QString DocumentController::currentDirectory() const
+{
+    if ( activeDocument() ) {
+        QUrl url = activeDocument()->url();
+        if (!isEmptyDocumentUrl(url)) {
+            return url.adjusted(
+                QUrl::RemoveScheme |
+                QUrl::RemoveFilename |
+                QUrl::StripTrailingSlash).toString();
+        }
+    }
+    if (!d->directoryHint.isEmpty()) {
+        return d->directoryHint;
+    } else {
+        const auto cfg = KSharedConfig::openConfig()->group("Open File");
+        return cfg.readEntry( "Last Open File Directory", Core::self()->projectController()->projectsBaseDirectory() ).toString();
+    }
+    return QString();
 }
 
 QUrl DocumentController::nextEmptyDocumentUrl()

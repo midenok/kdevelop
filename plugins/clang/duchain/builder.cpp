@@ -127,6 +127,7 @@ Identifier makeId(CXCursor cursor)
     return Identifier(ClangString(clang_getCursorSpelling(cursor)).toIndexed());
 }
 
+#if CINDEX_VERSION_MINOR >= 100 // FIXME https://bugs.llvm.org/show_bug.cgi?id=35333
 QByteArray makeComment(CXComment comment)
 {
     if (Q_UNLIKELY(jsonTestRun())) {
@@ -143,6 +144,7 @@ QByteArray makeComment(CXComment comment)
 
     return ClangString(clang_FullComment_getAsHTML(comment)).toByteArray();
 }
+#endif
 
 AbstractType* createDelayedType(CXType type)
 {
@@ -595,7 +597,7 @@ struct Visitor
         return t;
     }
 
-    template<CXTypeKind TK, EnableIf<TK == CXType_Vector> = dummy>
+    template<CXTypeKind TK, EnableIf<TK == CXType_Vector || TK == CXType_Complex> = dummy>
     AbstractType *createType(CXType type, CXCursor /*parent*/)
     {
         return createDelayedType(type);
@@ -946,7 +948,11 @@ template<CXCursorKind CK>
 void Visitor::setDeclData(CXCursor cursor, Declaration *decl, bool setComment) const
 {
     if (setComment)
+#if CINDEX_VERSION_MINOR < 100 // FIXME https://bugs.llvm.org/show_bug.cgi?id=35333
+        decl->setComment(KDevelop::formatComment(QByteArray(clang_getCString(clang_Cursor_getRawCommentText(cursor)))));
+#else
         decl->setComment(makeComment(clang_Cursor_getParsedComment(cursor)));
+#endif
     if (CursorKindTraits::isAliasType(CK)) {
         decl->setIsTypeAlias(true);
     }
@@ -1347,6 +1353,7 @@ AbstractType *Visitor::makeType(CXType type, CXCursor parent)
 #if CINDEX_VERSION_MINOR >= 38
     UseKind(CXType_Float128);
 #endif
+    UseKind(CXType_Complex);
     case CXType_Invalid:
         return nullptr;
     default:

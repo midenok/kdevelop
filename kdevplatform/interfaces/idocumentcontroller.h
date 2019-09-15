@@ -103,6 +103,8 @@ public:
      */
     virtual KTextEditor::View* activeTextDocumentView() const = 0;
 
+    virtual void updateDirectoryHint(const QString&) = 0;
+
 public Q_SLOTS:
     /**
      * Opens a new or existing document.

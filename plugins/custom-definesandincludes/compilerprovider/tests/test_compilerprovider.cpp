@@ -25,6 +25,7 @@
 
 #include <QTest>
 #include <QTemporaryFile>
+#include <QSignalBlocker>
 
 #include <tests/autotestshell.h>
 #include <tests/testcore.h>
@@ -84,7 +85,7 @@ void testAddingEntry(SettingsManager* settings, KConfig* config){
 
 void TestCompilerProvider::initTestCase()
 {
-    AutoTestShell::init();
+    AutoTestShell::init({QStringLiteral("kdevdefinesandincludesmanager"), QStringLiteral("KDevCustomBuildSystem"), QStringLiteral("KDevStandardOutputView")});
     TestCore::initialize();
 }
 

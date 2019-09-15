@@ -159,13 +159,18 @@ KDevelop::Breakpoint* LldbFormattersTest::addCodeBreakpoint(const QUrl& location
 // Called before the first testfunction is executed
 void LldbFormattersTest::initTestCase()
 {
-    AutoTestShell::init();
+    AutoTestShell::init({QStringLiteral("kdevlldb"), QStringLiteral("kdevexecute")});
     m_core = TestCore::initialize(Core::NoUi);
 
     m_iface = m_core->pluginController()
                 ->pluginForExtension(QStringLiteral("org.kdevelop.IExecutePlugin"), QStringLiteral("kdevexecute"))
                 ->extension<IExecutePlugin>();
     Q_ASSERT(m_iface);
+
+    const QString lldbMiExecutable = QStandardPaths::findExecutable(QStringLiteral("lldb-mi"));
+    if (lldbMiExecutable.isEmpty()) {
+        QSKIP("Skipping, lldb-mi not available");
+    }
 }
 
 // Called after the last testfunction was executed
@@ -936,15 +941,15 @@ void LldbFormattersTest::testQUrl()
     WAIT_FOR_A_WHILE_AND_IDLE(m_session, 50);
 
     QList<QPair<QString, QString>> children;
-    children.append({QStringLiteral("(port)"), QStringLiteral("-1")});
+    children.append({QStringLiteral("(port)"), QStringLiteral("12345")});
     children.append({QStringLiteral("(scheme)"), QStringLiteral("\"http\"")});
-    children.append({QStringLiteral("(userName)"), QStringLiteral("<Invalid>")});
+    children.append({QStringLiteral("(userName)"), QStringLiteral("\"user\"")});
     children.append({QStringLiteral("(password)"), QStringLiteral("<Invalid>")});
     children.append({QStringLiteral("(host)"), QStringLiteral("\"www.kdevelop.org\"")});
     children.append({QStringLiteral("(path)"), QStringLiteral("\"/foo\"")});
-    children.append({QStringLiteral("(query)"), QStringLiteral("<Invalid>")});
-    children.append({QStringLiteral("(fragment)"), QStringLiteral("<Invalid>")});
-    VERIFY_LOCAL(0, "u", "\"http://www.kdevelop.org/foo\"", children);
+    children.append({QStringLiteral("(query)"), QStringLiteral("\"xyz=bar\"")});
+    children.append({QStringLiteral("(fragment)"), QStringLiteral("\"asdf\"")});
+    VERIFY_LOCAL(0, "u", "\"http://user@www.kdevelop.org:12345/foo?xyz=bar#asdf\"", children);
 }
 
 void LldbFormattersTest::testQUuid()

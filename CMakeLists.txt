@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(KDevelop VERSION 5.2.0)
+project(KDevelop VERSION 5.2.1)
 
 # KDevelop SOVERSION
 # E.g. for KDevelop 5.2.0 => SOVERSION 52 (we only promise ABI compatibility between patch version updates)
@@ -30,6 +30,13 @@ include(CheckFunctionExists)
 
 include(KDEInstallDirs)
 include(KDECMakeSettings)
+
+if(POLICY CMP0071)
+  # CMake 3.10 generates warnings when projects combine AUTOMOC with qt5_wrap_ui() or qt5_add_resources()
+  # Avoid that by setting this policy (cf. https://bugreports.qt.io/browse/QTBUG-63442)
+  # Note: Once we depend on a Qt which has this fix (likely Qt 5.9.4+), remove this
+  cmake_policy(SET CMP0071 OLD)
+endif()
 
 set(QT_MIN_VERSION "5.5.0")
 find_package(Qt5 ${QT_MIN_VERSION} CONFIG REQUIRED Widgets Concurrent Quick QuickWidgets)
@@ -73,6 +80,14 @@ set_package_properties(KDevelop-PG-Qt PROPERTIES
 )
 
 find_package(SharedMimeInfo REQUIRED)
+
+if(NOT CMAKE_VERSION VERSION_LESS "3.10.0" AND KF5_VERSION VERSION_LESS "5.42.0")
+  # CMake 3.9+ warns about automoc on files without Q_OBJECT, and doesn't know about other macros.
+  # 3.10+ lets us provide more macro names that require automoc.
+  # KF5 >= 5.42 takes care itself of adding its macros in its cmake config files
+  list(APPEND CMAKE_AUTOMOC_MACRO_NAMES
+       "K_PLUGIN_FACTORY_WITH_JSON" "K_EXPORT_PLASMA_DATAENGINE_WITH_JSON" "K_EXPORT_PLASMA_RUNNER")
+endif()
 
 add_definitions(
     -DQT_DEPRECATED_WARNINGS
@@ -160,6 +175,6 @@ configure_file(${CMAKE_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_BINARY_DIR}/CTestCu
 install(FILES org.kde.kdevelop.appdata.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
 
 # Make it possible to use the po files fetched by the fetch-translations step
-ki18n_install("${CMAKE_CURRENT_BINARY_DIR}/po")
+ki18n_install(po)
 
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)
